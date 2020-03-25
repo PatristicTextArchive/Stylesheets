@@ -53,15 +53,17 @@
 	</xsl:template>
 
 	 <xsl:template match="tei:witness">
-	   <xsl:text>&#10;- **</xsl:text>
+	   <xsl:text>&#10;- **[</xsl:text>
 		 <xsl:value-of select="tei:abbr"/>
-		 <xsl:text>** </xsl:text>
+		 <xsl:text>]{#</xsl:text>
+		 <xsl:value-of select="@xml:id"/>
+		 <xsl:text>}** </xsl:text>
 	   <xsl:value-of select="tei:name"/>
 	   <xsl:text> (</xsl:text><xsl:value-of select="tei:origDate"/>
 	   <xsl:text>)</xsl:text>
 	   <xsl:text>, </xsl:text><xsl:value-of select="tei:locus"/>
 	   <xsl:if test="@source">
-	     <xsl:text> (Abschrift von </xsl:text><xsl:value-of select="translate(@source,'#','')"/><xsl:text>)</xsl:text>
+	     <xsl:text> (Abschrift von [</xsl:text><xsl:value-of select="translate(@source, '#', '')"/><xsl:text>](</xsl:text><xsl:value-of select="@source"/><xsl:text>))</xsl:text>
 	   </xsl:if>
 	 </xsl:template>
 
@@ -85,14 +87,21 @@
 		  <xsl:text>&#10;&#10;* </xsl:text>
 	      <xsl:choose>
 	      <xsl:when test="@facs">
-	      	   <xsl:text>[</xsl:text>
+	      	   <xsl:text>[[</xsl:text>
 		<xsl:apply-templates/>
+		<xsl:text>]{#</xsl:text>
+		<xsl:value-of select="@xml:id"/>
+		<xsl:text>}</xsl:text>
 	   <xsl:text>](</xsl:text>
 	   <xsl:value-of select="@facs"/>
 	   <xsl:text>)&#10;</xsl:text>
 	      </xsl:when>
 	      <xsl:otherwise>
+					<xsl:text>[</xsl:text>
 		<xsl:apply-templates/>
+		<xsl:text>]{#</xsl:text>
+		<xsl:value-of select="@xml:id"/>
+		<xsl:text>} </xsl:text>
 	      </xsl:otherwise>
 	      </xsl:choose>
 	    </xsl:when>
@@ -339,14 +348,15 @@
 	<xsl:template match="tei:app">
 			<!-- Fall: Bezeugung -->
 			<xsl:if test="(@type='witnesses')">
-				<xsl:text> </xsl:text>
 				<xsl:choose>
 					<xsl:when test="tei:rdg/tei:witStart|tei:rdg/tei:lacunaEnd">
+					<xsl:value-of select="tei:rdg"/>
 						<xsl:text>^[inc. </xsl:text>
 						<xsl:value-of select="tei:rdg/replace(@wit, '#', '')"/>
 						<xsl:text>] </xsl:text>
 					</xsl:when>
 					<xsl:when test="tei:rdg/tei:witEnd|tei:rdg/tei:lacunaStart">
+					<xsl:value-of select="tei:rdg"/>
 						<xsl:text>^[des. </xsl:text>
 						<xsl:value-of select="tei:rdg/replace(@wit, '#', '')"/>
 						<xsl:text>] </xsl:text>
@@ -374,14 +384,21 @@
         	<xsl:apply-templates select="tei:lem//text()"/>
 					</xsl:when>
       	<!-- Fall: lem leer, weil andere Handschriften etwas hinzufügen -->
-      		<xsl:when test="tei:lem=''">
-          	<xsl:text>*</xsl:text>
+      		<xsl:when test="tei:lem[not(descendant::tei:app)]=''">
+          	<xsl:text>^[</xsl:text>
           	<xsl:apply-templates select="tei:rdg|tei:rdgGrp/tei:rdg"/>
-            <xsl:text> </xsl:text>
+            <xsl:text>] </xsl:text>
 					</xsl:when>
       		<xsl:otherwise>
+						<xsl:if test="@xml:id">
+						<xsl:text>[</xsl:text>
+					</xsl:if>
 				<xsl:value-of select="tei:rdgGrp/tei:lem|tei:lem"/>
-				<xsl:text>^[</xsl:text>
+				<xsl:if test="@xml:id">
+		 		 <xsl:text>]{#</xsl:text>
+	 		 <xsl:value-of select="@xml:id"/>
+				<xsl:text>}</xsl:text></xsl:if>
+ 				<xsl:text>^[</xsl:text>
 				<xsl:value-of select="tei:rdgGrp/tei:lem|tei:lem"/>
 				<xsl:text> *</xsl:text>
 				<xsl:if test="tei:lem[@cause='correction']">
@@ -567,15 +584,15 @@
 		<xsl:text>&#10;</xsl:text>
 	</xsl:template>
 
-	<xsl:template match="tei:ref[not(parent::tei:seg)]">
-
-	  <xsl:if test="@target">
+	<xsl:template match="tei:ref">
+<xsl:choose>
+	  <xsl:when test="@target">
 
 	    <xsl:choose>
 
               <xsl:when test="substring(@target,1,1)='#'">
 		    <xsl:text>*</xsl:text>
-                    <xsl:apply-templates/>
+				<xsl:text>[</xsl:text><xsl:apply-templates/><xsl:text>](</xsl:text><xsl:value-of select="@target"/><xsl:text>)</xsl:text>
 		    <xsl:text>*</xsl:text>
               </xsl:when>
 
@@ -596,6 +613,10 @@
 		</xsl:choose>
         </xsl:otherwise>
       </xsl:choose>
-    </xsl:if>
+    </xsl:when>
+		<xsl:otherwise>
+			<xsl:apply-templates/>
+		</xsl:otherwise>
+	</xsl:choose>
 	  </xsl:template>
 </xsl:stylesheet>
